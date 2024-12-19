@@ -1,0 +1,102 @@
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+-- Create a new highlight effect (e.g., neon outline) for the enemy player's head
+local function createHeadHighlight(player)
+    local character = player.Character
+    local head = character and character:FindFirstChild("Head")
+    
+    if head then
+        -- Check if the head highlight already exists to prevent duplicates
+        local existingHighlight = head:FindFirstChild("EnemyHeadHighlight")
+        if not existingHighlight then
+            -- Create a highlight object specifically for the head
+            local headHighlight = Instance.new("Highlight")
+            headHighlight.Name = "EnemyHeadHighlight"
+            headHighlight.Parent = head
+            headHighlight.Adornee = head
+            headHighlight.FillColor = Color3.fromRGB(0, 0, 255) -- Blue color for the head
+            headHighlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White outline
+            headHighlight.OutlineTransparency = 0.5
+            headHighlight.FillTransparency = 0.5
+        end
+    end
+end
+
+-- Create a highlight effect (e.g., neon outline) for the enemy player's body
+local function createBodyHighlight(player)
+    local character = player.Character
+    if character then
+        -- Check if the body highlight already exists to prevent duplicates
+        local existingHighlight = character:FindFirstChild("EnemyBodyHighlight")
+        if not existingHighlight then
+            -- Create a highlight object for the entire character body
+            local bodyHighlight = Instance.new("Highlight")
+            bodyHighlight.Name = "EnemyBodyHighlight"
+            bodyHighlight.Parent = character
+            bodyHighlight.Adornee = character
+            bodyHighlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red color for the body
+            bodyHighlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- White outline
+            bodyHighlight.OutlineTransparency = 0.5
+            bodyHighlight.FillTransparency = 0.3
+        end
+    end
+end
+
+-- Remove the highlights when the player dies or leaves
+local function removeHighlights(player)
+    local character = player.Character
+    if character then
+        local headHighlight = character:FindFirstChild("EnemyHeadHighlight")
+        local bodyHighlight = character:FindFirstChild("EnemyBodyHighlight")
+        if headHighlight then
+            headHighlight:Destroy()
+        end
+        if bodyHighlight then
+            bodyHighlight:Destroy()
+        end
+    end
+end
+
+-- Continuously check and highlight enemy players
+local function highlightEnemies()
+    local localPlayer = Players.LocalPlayer
+    local localTeam = localPlayer.Team
+
+    -- Iterate through all players in the game
+    for _, player in ipairs(Players:GetPlayers()) do
+        -- Skip if it's the local player or if the player is already on the same team
+        if player == localPlayer or player.Team == localTeam then
+            continue
+        end
+
+        -- Highlight the enemy player's body and head
+        createBodyHighlight(player)
+        createHeadHighlight(player)
+    end
+end
+
+-- Event listener for when players join the game
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(character)
+        -- Wait until the character is fully loaded
+        wait(1) -- Optional: Use `wait()` to ensure player is fully loaded
+        
+        -- Highlight enemy players
+        highlightEnemies()
+    end)
+end)
+
+-- Event listener for when players leave
+Players.PlayerRemoving:Connect(function(player)
+    -- Remove highlights when player leaves
+    removeHighlights(player)
+end)
+
+-- Continuous loop to update highlights at regular intervals
+RunService.Heartbeat:Connect(function()
+    -- Continuously check and highlight enemy players
+    highlightEnemies()
+end)
